@@ -1,8 +1,15 @@
-//variavel personagens
+var cena = 1
+
+
+//variavel Inicio
 var pc
 var pc_img
-
-var cena = 2
+var pc_animation
+var pulo
+var backgroundImage
+var BandeiraImg
+var Bandeira
+//
 
 //Variaveis jogo de corrida
 var path,mainCyclist;
@@ -23,6 +30,7 @@ var gameState = PLAY;
 var distance=0;
 var gameOver, restart;
 
+var hamburguer = 0
 //
 
 //Variaveis jogo de culinaria
@@ -38,13 +46,15 @@ var gameOverSound ,knifeSwoosh;
 
 
 function preload() {
-  //jogo principal
-  //backgroundImage1 = loadImage("");
-  //backgroundImage2 = loadImage("");
-  //pc_img=loadAnimation("")
+  //Inicio
+  backgroundImage = loadImage("./Cena1Imagens/Background.png");
+  pc_img = loadAnimation("./Cena1Imagens/Personagem5.png")
+  pc_animation = loadAnimation("./Cena1Imagens/Personagem1.png","./Cena1Imagens/Personagem2.png","./Cena1Imagens/Personagem3.png","./Cena1Imagens/Personagem4.png")
+  BandeiraImg = loadImage("./Cena1Imagens/Bandeira1.png")
+  //
 
   //Jogo corrida
-   pathImg = loadImage("./CorridaImagens/Road.png");
+  pathImg = loadImage("./CorridaImagens/Road.png");
   mainRacerImg1 = loadAnimation("./CorridaImagens/cavalo1.png","./CorridaImagens/cavalo2.png","./CorridaImagens/cavalo3.png","./CorridaImagens/cavalo4.png","./CorridaImagens/cavalo5.png","./CorridaImagens/cavalo6.png","./CorridaImagens/cavalo7.png","./CorridaImagens/cavalo8.png");
   mainRacerImg2= loadAnimation("./CorridaImagens/cavalo caido.png");
   
@@ -61,7 +71,8 @@ function preload() {
   //
 
   //Jogo de culinaria
-   knifeImage = loadImage("./CulinariaImagens/MãoAberta.png");
+  knifeImage = loadImage("./CulinariaImagens/MãoAberta.png");
+  knifeImage2 = loadImage("./CulinariaImagens/MãoFechada.png");
   monsterImage = loadAnimation("./CulinariaImagens/alien1.png","./CulinariaImagens/alien2.png")
   fruit1 = loadImage("./CulinariaImagens/Pão.png");
   fruit2 = loadImage("./CulinariaImagens/Queijo.png");
@@ -78,9 +89,17 @@ function preload() {
 }
 
 function setup() {
- createCanvas(1200,500);
- //moviemnto
- pc = createSprite(50,450,20,30);
+ canvas = createCanvas(1200,500);
+ canvas.position((windowWidth - width) / 2, (windowHeight - height) / 2);
+ //Inicio
+ pc = createSprite(50,430,20,30);
+ pc.addAnimation("pcAndando", pc_animation)
+ pc.addAnimation("pcParado", pc_img)
+ pc.changeAnimation("pcParado")
+ pc.scale = 1
+ Bandeira = createSprite(1100,430)
+ Bandeira.addImage(BandeiraImg)
+ //
 
   //Jogo de Corrida
   path=createSprite(100,250);
@@ -107,12 +126,24 @@ function setup() {
   pinkCG = new Group();
   yellowCG = new Group();
   redCG = new Group();
+
+  text1 = createElement("h1");
+  text1.html("Hamburguer: "+hamburguer+"/10");
+  //              1200       600      900     500       250         30
+  text1.position(canvas.x + width / 2 +250, canvas.y + height / 2 - 220)
+
+  text2 = createElement("h1");
+  text1.html("Press Up Arrow to Restart the game!");
+  //              1200       600      900     500       250         30
+  text1.position(canvas.x + width / 2 -100, canvas.y + height / 2 -50)
   //
 
   //Jogo de Culinaria
    knife=createSprite(40,200,20,20);
    knife.addImage(knifeImage);
    knife.scale=0.4
+
+   knife.visible = false
   
     knife.setCollider("rectangle",0,0,40,40);
 
@@ -120,27 +151,49 @@ function setup() {
     fruitGroup=createGroup();
     monsterGroup=createGroup();
   //
-
+  esconderElementos()
 }
 
 function draw() 
 {  
-  //Jogo da "Morte"
+  //Inicio
   if(cena === 1){
-    background("black");
-    
-   
-  
+    background(backgroundImage);
+    if(keyDown("i")){
+      pc.velocityX = 3
+      pc.changeAnimation("pcAndando")
+    } 
+    if(pc.x >= 600){
+      pc.velocityY = -3
+      setTimeout(()=>{
+        pc.velocityY = 2
+      },500)
+    }
+    if(pc.isTouching(Bandeira)){
+      setTimeout(()=>{
+        pc.visible = false
+      Bandeira.visible = false
+      pc.velocityX = 0
+      cena = 2
+      },2000)
+    }
+   // else if(pc.x >= 800){
+    //  pc.velocityY = -4
+    //  setTimeout(()=>{
+     //   pc.velocityY = 2
+    //  },500)
+    //}
+    //pc.velocityY += 1
+    edges = createEdgeSprites()
+    pc.collide(edges[3])
   }
+
   //Corrida
   if(cena === 2){
-    textSize(20);
-  fill(255);
-  text("Distance: "+ distance,100,30);
 
   path.visible = true
   mainCyclist.visible = true
-
+  text1.show()
   path.scale = 1
   mainCyclist.scale = 1
   
@@ -154,56 +207,68 @@ function draw()
    edges= createEdgeSprites();
    mainCyclist .collide(edges);
   
-  //code to reset the background
-  if(path.x < 0 ){
-    path.x = width/2;
-  }
-  
-    //code to play cycle bell sound
-  if(keyDown("space")) {
-    cycleBell.play();
-  }
-  
-  //creating continous opponent players
-  var select_oppPlayer = Math.round(random(1,3));
-  
-  if (World.frameCount % 125 == 0) {
-    if (select_oppPlayer == 1) {
-      pinkCyclists();
-    }else {
-      redCyclists();
-    }
-     
-  }
-  if (World.frameCount % 200 == 0) {
-    if (select_oppPlayer == 2) {
-      yellowCyclists();
-    } 
-  }
-  
-   if(pinkCG.isTouching(mainCyclist)){
-     gameState = END;
-     player1.velocityY = 0;
-     player1.addAnimation("opponentPlayer1",oppPink2Img);
-     player1.scale = 0.17
-     player1.x = mainCyclist.x + 250
+    //code to reset the background
+    if(path.x < 0 ){
+      path.x = width/2;
     }
     
-    if(yellowCG.isTouching(mainCyclist)){
-      yellowCG.destroyEach()
-      distance += 1
+      //code to play cycle bell sound
+    if(keyDown("space")) {
+      cycleBell.play();
     }
     
-    if(redCG.isTouching(mainCyclist)){
+    //creating continous opponent players
+    var select_oppPlayer = Math.round(random(1,3));
+    
+    if (World.frameCount % 125 == 0) {
+      if (select_oppPlayer == 1) {
+        pinkCyclists();
+      }else {
+        redCyclists();
+      }
+      
+    }
+    if (World.frameCount % 200 == 0) {
+      if (select_oppPlayer == 2) {
+        yellowCyclists();
+      } 
+    }
+    if(hamburguer === 1){
+       setTimeout(()=>{
+        pinkCG.destroyEach();
+        yellowCG.destroyEach();
+        redCG.destroyEach();
+        path.visible = false
+        mainCyclist.visible = false
+        text1.hide()
+        cena = 3
+      },1000)
+      }
+    if(pinkCG.isTouching(mainCyclist)){
       gameState = END;
-      player3.velocityY = 0;
-      player3.addAnimation("opponentPlayer3",oppRed2Img);
-      player3.scale = 0.17
-      player3.x = mainCyclist.x + 250
-    }
-    
+      player1.velocityY = 0;
+      player1.addAnimation("opponentPlayer1",oppPink2Img);
+      player1.scale = 0.17
+      player1.x = mainCyclist.x + 250
+      }
+      
+      if(yellowCG.isTouching(mainCyclist)){
+        yellowCG.destroyEach()
+        hamburguer += 1
+        text1.html("Hamburguer: "+hamburguer+"/10");
+      }
+      
+      if(redCG.isTouching(mainCyclist)){
+        gameState = END;
+        player3.velocityY = 0;
+        player3.addAnimation("opponentPlayer3",oppRed2Img);
+        player3.scale = 0.17
+        player3.x = mainCyclist.x + 250
+      }
+      
 }else if (gameState === END) {
     gameOver.visible = true;
+    text2.show()
   
     textSize(20);
     fill(255);
@@ -224,6 +289,7 @@ function draw()
     redCG.setLifetimeEach(-1);
     
     if(keyDown("UP_ARROW")) {
+      
       reset();
     }
   }
@@ -232,6 +298,7 @@ function draw()
   //Culinaria
   if(cena === 3){
      background("lightblue")
+     knife.visible = true
     if(gameState===PLAY){
     
     fruits();
@@ -242,6 +309,11 @@ function draw()
   
     if(fruitGroup.isTouching(knife)){
       fruitGroup.destroyEach();
+
+      knife.addImage(knifeImage2)
+      setTimeout( () => {
+        knife.addImage(knifeImage)
+      }, 500)
       
        knifeSwooshSound.play();
 
@@ -259,17 +331,27 @@ function draw()
         monsterGroup.destroyEach();
         fruitGroup.setVelocityXEach(0);
         monsterGroup.setVelocityXEach(0);
+
+        
         
         knife.addImage(gameOverImage);
         knife.scale=1;
-        knife.x=300;
+        knife.x=600;
         knife.y=300;
       }
     }
+  } else if(gameState === END){
+    textSize(20)
+    text("Press R to Restart the game!", 500,200);
+
+         if(keyDown("R")) {
+          reset2();
+          knife.scale = 0.4
+        }
   }
   
   textSize(25);
-  text("Pontuação: "+ score,250,50);
+  text("Points: "+ score + "/50",50,50);
   }
   //Quiz
   if(cena === 4){
@@ -300,8 +382,9 @@ function pinkCyclists(){
 }
 
 function yellowCyclists(){
+
         player2 =createSprite(1100,Math.round(random(50, 250)));
-        player2.scale =0.1;
+        player2.scale = 0.9;
         player2.velocityX = -(6 + 2*distance/150);
         player2.addAnimation("opponentPlayer2",oppYellow1Img);
         player2.setLifetime=170;
@@ -378,4 +461,23 @@ function fruits(){
     fruitGroup.add(fruit);
   }
 }
+
+function reset2(){
+  gameState = PLAY;
+  knife.addImage(knifeImage)
+  
+  fruitGroup.destroyEach();
+  monsterGroup.destroyEach();
+  
+  score = 0
+ }
 //
+function windowResized(){
+  canvas.position((windowWidth - width) / 2, (windowHeight - height) / 2);
+  text1.position(canvas.x + width / 2 +250, canvas.y + height / 2 - 220)
+}
+
+function esconderElementos(){
+  text1.hide()
+  text2.hide()
+}
